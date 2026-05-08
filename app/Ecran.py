@@ -1,35 +1,74 @@
 import pygame
-def drawScreen(self):
-        # Couleurs : bleu clair pour les pixels allumés, bleu très foncé pour le fond
-        # Ça donne un style rétro sympa
-        onPixel = (139, 200, 254)
-        offPixel = (5, 27, 44)
 
-        # On remplit tout l'écran avec la couleur de fond
-        self.screen.fill(offPixel)
+CHIP8_WIDTH  = 64
+CHIP8_HEIGHT = 32
+PIXEL_SCALE  = 10
 
-        # Surface de 10x10 pixels pour dessiner chaque "gros pixel"
-        pixel_surface = pygame.Surface((10, 10))
-        pixel_surface.set_alpha(255)
+# Couleurs style rétro cathodique
+ON_PIXEL  = (139, 200, 254)   # pixel allumé
+OFF_PIXEL = (5,   27,  44)    # fond
 
-        for i in range(len(self.display_buffer)):
-            # Conversion index linéaire -> coordonnées (x, y) sur l'écran agrandi
-            x = (i % 64) * 10
-            y = (i // 64) * 10
 
-            if self.display_buffer[i] == 1:
-                # Pixel allumé : alpha à fond
+class Ecrand:
+
+    def __init__(self):
+        pygame.init()
+
+        # Fenêtre de 640×320 (64×32 pixels CHIP-8 × 10)
+        self.ecrand = pygame.display.set_mode(
+            (CHIP8_WIDTH * PIXEL_SCALE, CHIP8_HEIGHT * PIXEL_SCALE)
+        )
+        pygame.display.set_caption("CHIP-8 Emulator")
+
+        # Buffer logique : 0 = éteint, 1 = allumé
+        self.display_buffer = [0] * (CHIP8_WIDTH * CHIP8_HEIGHT)
+
+        # Niveau d'alpha par pixel pour l'effet phosphore
+        self.pixel_alpha    = [0] * (CHIP8_WIDTH * CHIP8_HEIGHT)
+
+        # Surface réutilisable pour dessiner chaque gros pixel
+        self._pixel_surf = pygame.Surface((PIXEL_SCALE, PIXEL_SCALE))
+        self._pixel_surf.set_alpha(255)
+
+    def clear(self):
+        self.display_buffer = [0] * (CHIP8_WIDTH * CHIP8_HEIGHT)
+
+    def draw_sprite(self, x, y, sprite):
+        collision = False
+
+        for row, byte in enumerate(sprite):
+            for col in range(8):
+                # Bit de poids fort en premier
+                if byte & (0x80 >> col):
+                    px  = (x + col) % CHIP8_WIDTH
+                    py  = (y + row) % CHIP8_HEIGHT
+                    idx = py * CHIP8_WIDTH + px
+
+                    if self.display_buffer[idx] == 1:
+                        collision = True  # XOR : 1 ⊕ 1 = 0 → collision
+                    self.display_buffer[idx] ^= 1
+
+        return collision
+
+    def render(self):
+        self.ecrand.fill(OFF_PIXEL)
+
+        for i, state in enumerate(self.display_buffer):
+            x = (i % CHIP8_WIDTH)  * PIXEL_SCALE
+            y = (i // CHIP8_WIDTH) * PIXEL_SCALE
+
+            if state == 1:
                 self.pixel_alpha[i] = 255
             else:
-                # Pixel éteint : on diminue l'alpha progressivement
-                # Ça fait un effet de phosphore comme les vieux écrans cathodiques
-                # Le pixel ne disparaît pas d'un coup, il fade out
+                # Effet phosphore : fade-out progressif
                 self.pixel_alpha[i] = max(0, self.pixel_alpha[i] - 25)
 
-            # On dessine le pixel seulement s'il a encore un peu de transparence
             if self.pixel_alpha[i] > 0:
-                pixel_surface.fill(onPixel)
-                pixel_surface.set_alpha(self.pixel_alpha[i])
-                self.screen.blit(pixel_surface, (x, y))
+                self._pixel_surf.fill(ON_PIXEL)
+                self._pixel_surf.set_alpha(self.pixel_alpha[i])
+                self.ecrand.blit(self._pixel_surf, (x, y))
 
         pygame.display.update()
+
+    def quit(self):
+        pygame.quit()
