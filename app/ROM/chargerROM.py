@@ -1,10 +1,7 @@
 import functools
 from importlib import import_module
 
-
-def display_msg(msg, type="info"):
-    tag = {"info": "[INFO]", "danger": "[ERREUR]", "warn": "[WARN]"}.get(type, "[LOG]")
-    print(f"{tag} {msg}")
+from... outils import Couleur
 
 
 class ROM:
@@ -17,7 +14,7 @@ class ROM:
             if "path" in kwargs:
                 os = import_module("os")
                 if not os.path.exists(kwargs["path"]):
-                    display_msg(f"Le chemin '{kwargs['path']}' n'existe pas.", type="danger")
+                    print(texte("Le chemin '{kwargs['path]}' n'existe pas.", "bleu"))
                     return
             return fc(*args, **kwargs)
         return _
