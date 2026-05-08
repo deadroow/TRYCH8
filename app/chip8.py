@@ -1,12 +1,6 @@
-import os
-import Couleur
+
+import outils.Couleur as Couleur
 from random import randint
-def clear_screen(): 
-    """ Efface le contenu du terminal selon le système d'exploitation. """
-    if os.name == 'nt':
-        os.system('cls')
-    else:
-        os.system('clear')
 
 sprite=[
     0xF0, 0x90, 0x90, 0x90, 0xF0, 0x20, 0x60, 0x20, 0x20, 0x70, # 0 et 1
@@ -30,13 +24,15 @@ class chip_8:
         self.ecran=[0]*(64*32)
         self.delay_timer=0
         self.sound_timer=0
+        self.etat_touche=[False]*16
+        
 
         for i in range(len(sprite)):
             self.memoir[i]=sprite[i]
 
         
     def cycle (self):
-        opcode=(self.memoir[self.pc]<<8) | self.memoir[self.pc]
+        opcode=(self.memoir[self.pc]<<8) | self.memoir[self.pc+1]
         t=(opcode&0xF000)>>12
         x=(opcode&0x0F00)>>8
         y=(opcode&0x00F0)>>4
@@ -50,7 +46,7 @@ class chip_8:
             case 0x0: # reset le tab
                 if NN==0xE0:
                     self.ecran=[0]*(64*32)
-                elif nn==0xEE: #sort d'une sous routine
+                elif NN==0xEE: #sort d'une sous routine
                     self.SP-=1
                     self.pc=self.stack[self.SP] 
 
@@ -148,7 +144,8 @@ class chip_8:
                     self.pc+=2
 
 
-            case 0xA: # I=NNN
+            case 0xA: # change l'addresse I par NNN
+                
                 self.I=NNN
 
             case 0xB: # jump a l'addresse nnn+vo
@@ -162,17 +159,62 @@ class chip_8:
                 x_pos=self.v[x]%64
                 y_pos=self.v[y]%32
                 self.v[0xF]=0
-                pass
+                
 
-            case E:
+            case 0xE:
                 match NN:
                     case 0x9E: # skip next if key [x] press
-                        if key[x]==False:
+                        if self.etat_touche[x]==False:
                             self.pc+=2
             
                     case 0xA1: # skip next if key [x] is not press
-                        if key[x]==True: # key a créer plus tard
+                        if self.etat_touche[x]==True: # key a créer plus tard
                             self.pc+=2
 
                     case _:
                         print("texte({hex(opcode)}, rouge)")
+
+
+            case 0xF:
+                match NN:
+                    case 0x07:
+                        self.v[x]=self.delay_timer
+
+                    case 0x0A:
+                        self.v[x]= attendre_touche()
+                    
+                    case 0x15:
+                        self.delay_timer=self.v[x]
+
+                    case 0x18:
+                        self.sound_timer=self.v[x]
+                    
+                    case 0x1E: # I = I+ v[x]
+                        self.I+=self.v[x]
+                    
+                    case 0x29:
+                        self.I=(5*(self.v[x])) & 0x0FFF
+                    
+                    case 0x33:
+                        #i= centaine i+1 = dizaine i+2 = unité
+                        self.memoir[self.I]=self.v[x]//100
+                        self.memoir[self.I+1]=(self.v[x]%100)//10
+                        self.memoir[self.I+2]=self.v[x]%10
+
+                    case 0x55:
+                        i = 0
+                        while i <= self.vx:
+                            self.memory[self.index + i] = self.registers[i]
+                            i += 1
+                    
+                    case 0x65:
+                        i = 0
+                        while i <= self.vx:
+                            self.registers[i] = self.memory[self.index + i]
+                            i += 1
+                    
+                    case _:
+                        print("texte({hex(opcode)}, rouge)")
+            case _:
+                print("texte({hex(opcode)}, rouge)")
+        self.pc+=2

@@ -11,7 +11,7 @@ import os
     progress_regex=r"^progress: (?P<current>\d+)/(?P<total>\d+)$",
     progress_expr="current / total * 100"
 )
-def main():
+def chemin():
     # Parser Gooey pour gérer les arguments utilisateur
     parser = GooeyParser(description="Sélectionnez le fichier Chip8 que vous voulez exécuter")
 
@@ -53,6 +53,3 @@ def main():
         print(f"Erreur lors de l'exécution de l'émulateur : {e}")
 
 
-# Point d'entrée du programme
-if __name__ == "__main__":
-    main()

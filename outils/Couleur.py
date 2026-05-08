@@ -7,7 +7,6 @@ BLEU = "\033[0;34m"
 VIOLET = "\033[0;35m"
 CYAN = "\033[0;36m"
 JAUNE = "\033[1;33m"
-
 NO_COLOR="\033[0m"
 
 

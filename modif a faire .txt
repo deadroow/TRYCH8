@@ -1,0 +1,7 @@
+implémenter la fenetre pygame
+    -détection des touche 2 état enfoncer = False  relacher = True
+        voir opcode ExNN
+
+    - opcode Fx0A
+
+    -

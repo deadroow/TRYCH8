@@ -1,7 +1,7 @@
 import functools
 from importlib import import_module
 
-from... outils import Couleur
+from... outils.Couleur import texte
 
 
 class ROM:
@@ -57,5 +57,5 @@ class ROM:
         """Copie la ROM en mémoire à partir de 0x200."""
         for i, byte in enumerate(content):
             self.memory[0x200 + i] = byte
-        display_msg(f"ROM chargée ({len(content)} bytes) depuis '{path}'")
+        print(texte(f"ROM chargée ({len(content)} bytes) depuis '{path}'","vert"))
         return content

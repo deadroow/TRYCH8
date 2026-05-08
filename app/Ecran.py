@@ -9,7 +9,7 @@ ON_PIXEL  = (139, 200, 254)   # pixel allumé
 OFF_PIXEL = (5,   27,  44)    # fond
 
 
-class Ecrand:
+class Ecran:
 
     def __init__(self):
         pygame.init()
