@@ -1,4 +1,3 @@
-
 import outils.Couleur as Couleur
 from random import randint
 
@@ -14,17 +13,18 @@ sprite=[
 ]
 
 class chip_8:
-    def __init__(self):
+    def __init__(self, clavier=None):
         self.v=[0]*16
         self.memoir=[0]*4096
         self.pc=0x200
         self.I=0
-        self.stack=[0]*16
+        self.stack=[0]*64
         self.SP=0
         self.ecran=[0]*(64*32)
         self.delay_timer=0
         self.sound_timer=0
         self.etat_touche=[False]*16
+        self.clavier=clavier
         
 
         for i in range(len(sprite)):
@@ -48,17 +48,21 @@ class chip_8:
                     self.ecran=[0]*(64*32)
                 elif NN==0xEE: #sort d'une sous routine
                     self.SP-=1
-                    self.pc=self.stack[self.SP] 
+                    self.pc=self.stack[self.SP]
+                    return
 
 
             case 0x1:
                 self.pc=NNN
+                return
 
 
             case 0x2: # régle pc a l'adresse NNN et sauvegarde son ancien adresse dans stack incrémente SP
-                self.stack[self.SP]=self.pc
-                self.SP+=1
+                if self.SP < len(self.stack):
+                    self.stack[self.SP]=self.pc+2
+                    self.SP+=1
                 self.pc=NNN
+                return
 
 
 
@@ -69,7 +73,7 @@ class chip_8:
 
             case 0x4:# si vx diff de NN saute instruction
                 if self.v[x]!=NN:
-                    self.pc=NN
+                    self.pc+=2
 
 
             case 0x5: #si vx == vy saute instruction 
@@ -150,16 +154,27 @@ class chip_8:
 
             case 0xB: # jump a l'addresse nnn+vo
                 self.pc=NNN+self.v[0]
+                return
 
 
             case 0xC:
                 self.v[x]=(randint(0,255)& NN)
 
             case 0xD: # dessin
-                x_pos=self.v[x]%64
-                y_pos=self.v[y]%32
-                self.v[0xF]=0
-                
+                x_pos = self.v[x] % 64
+                y_pos = self.v[y] % 32
+                self.v[0xF] = 0
+
+                for row in range(N):
+                    byte = self.memoir[self.I + row]
+                    for col in range(8):
+                        if byte & (0x80 >> col):
+                            px = (x_pos + col) % 64
+                            py = (y_pos + row) % 32
+                            idx = py * 64 + px
+                            if self.ecran[idx] == 1:
+                                self.v[0xF] = 1  # collision
+                            self.ecran[idx] ^= 1
 
             case 0xE:
                 match NN:
@@ -181,7 +196,13 @@ class chip_8:
                         self.v[x]=self.delay_timer
 
                     case 0x0A:
-                        self.v[x]= attendre_touche()
+                        if self.clavier:
+                            touche = self.clavier.attendre_touche()
+                            if touche is None:
+                                return
+                            self.v[x] = touche
+                        else:
+                            return
                     
                     case 0x15:
                         self.delay_timer=self.v[x]
@@ -203,14 +224,14 @@ class chip_8:
 
                     case 0x55:
                         i = 0
-                        while i <= self.vx:
-                            self.memory[self.index + i] = self.registers[i]
+                        while i <= x:
+                            self.memoir[self.I + i] = self.v[i]
                             i += 1
                     
                     case 0x65:
                         i = 0
-                        while i <= self.vx:
-                            self.registers[i] = self.memory[self.index + i]
+                        while i <= x:
+                            self.v[i] = self.memoir[self.I + i]
                             i += 1
                     
                     case _:
