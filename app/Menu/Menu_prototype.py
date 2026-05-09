@@ -8,6 +8,10 @@ from tkinter import filedialog
 
 # ====== CONFIGURATION ======
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Remonte deux niveaux : app/Menu/ -> app/ -> racine du projet
+ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
+
 WIDTH, HEIGHT = 900, 600
 
 # Couleurs
@@ -34,8 +38,8 @@ PALETTES = [
     {"nom": "Classique (Noir/Vert)", "on": (57, 255, 130), "off": (18, 18, 28)},
 ]
 
-# Chemin vers l'emulateur chip8 (a adapter)
-EMULATEUR_PATH = os.path.join(BASE_DIR, "chip8.py")
+# Chemin vers main.py a la racine du projet
+EMULATEUR_PATH = os.path.join(ROOT_DIR, "main.py")
 
 # ====== Etat global ======
 state = {
@@ -120,16 +124,16 @@ def choisir_rom():
 
 # ====== Lancer la ROM ======
 def lancer_rom():
-    if not state["rom_path"] or not os.path.exists(EMULATEUR_PATH):
+    if not state["rom_path"]:
         return False
-    w, h = PRESETS_VALEURS[state["preset_idx"]]
-    pal   = PALETTES[state["palette_idx"]]
-    on_s  = f"{pal['on'][0]},{pal['on'][1]},{pal['on'][2]}"
-    off_s = f"{pal['off'][0]},{pal['off'][1]},{pal['off'][2]}"
-    cmd = [sys.executable, EMULATEUR_PATH, state["rom_path"],
-           "--width", str(w), "--height", str(h),
-           "--color-on", on_s, "--color-off", off_s]
-    process = subprocess.Popen(cmd, cwd=os.path.dirname(EMULATEUR_PATH))
+
+    if not os.path.isfile(EMULATEUR_PATH):
+        print(f"Erreur : main.py introuvable à '{EMULATEUR_PATH}'")
+        return False
+
+    # Lance main.py en lui passant le chemin de la ROM en argument
+    cmd = [sys.executable, EMULATEUR_PATH, state["rom_path"]]
+    process = subprocess.Popen(cmd, cwd=ROOT_DIR)
     time.sleep(0.15)
     pygame.display.iconify()
     process.wait()
@@ -356,7 +360,6 @@ while running:
                     state["page"] = "main"
                     cached_btns = {}
                     handled = True
-                    # Redimensionne la fenetre du launcher
                     new_w, new_h = PRESETS_VALEURS[state["preset_idx"]]
                     screen = pygame.display.set_mode((new_w, new_h))
                 elif cached_btns.get("retour") and cached_btns["retour"].collidepoint(pos):
