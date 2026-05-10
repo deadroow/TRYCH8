@@ -1,3 +1,4 @@
+
 import outils.Couleur as Couleur
 from random import randint
 
@@ -178,12 +179,12 @@ class chip_8:
 
             case 0xE:
                 match NN:
-                    case 0x9E: # skip next if key [x] press
-                        if self.etat_touche[x]==False:
+                    case 0x9E: # skip next if key Vx is pressed
+                        if self.etat_touche[self.v[x]]:
                             self.pc+=2
-            
-                    case 0xA1: # skip next if key [x] is not press
-                        if self.etat_touche[x]==True: # key a créer plus tard
+
+                    case 0xA1: # skip next if key Vx is NOT pressed
+                        if not self.etat_touche[self.v[x]]:
                             self.pc+=2
 
                     case _:
